@@ -4,7 +4,9 @@ defmodule NilmWeb.UserController do
   alias Nilm.User
 
   def index(conn, _params) do
-    json(conn, Repo.all(User) |> User.all())
+    users = Repo.all(User)
+
+    json(conn, users)
   end
 
   def show(conn, %{"message" => message}) do
