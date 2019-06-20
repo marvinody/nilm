@@ -9,13 +9,23 @@ defmodule NilmWeb.UserController do
     json(conn, users)
   end
 
-  def create(conn, %{"email" => email}) do
-    case Repo.insert(%User{email: email}) do
+  def create(conn, params) do
+    changeset =
+      User.changeset(%User{}, %{
+        email: params["email"],
+        name: params["name"],
+        bio: params["bio"]
+      })
+
+    case Repo.insert(changeset) do
       {:ok, user} ->
         render(conn, "show.json", user: user)
 
-      {:error, error} ->
-        IO.puts(error)
+      {:error, changeset} ->
+        IO.puts("CHANGESET")
+        IO.inspect(changeset)
+
+        render(conn, "errors.json", changeset: changeset)
     end
   end
 

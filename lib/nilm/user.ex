@@ -15,5 +15,6 @@ defmodule Nilm.User do
     user
     |> cast(attrs, [:name, :email, :bio])
     |> validate_required([:name, :email])
+    |> validate_length(:name, min: 1)
   end
 end
