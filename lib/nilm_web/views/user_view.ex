@@ -2,7 +2,7 @@ defmodule NilmWeb.UserView do
   use NilmWeb, :view
 
   def render("show.json", %{user: user}) do
-    %{data: render_one(user, NilmWeb.UserView, "user.json")}
+    render_one(user, NilmWeb.UserView, "user.json")
   end
 
   def render("errors.json", %{changeset: changeset}) do
@@ -19,9 +19,14 @@ defmodule NilmWeb.UserView do
     }
   end
 
+  def render("errors.json", %{error: error}) do
+    %{errors: [error]}
+  end
+
   def render("user.json", %{user: user}) do
     %{
       email: user.email,
+      id: user.id,
       name: user.name
     }
   end
