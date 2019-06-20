@@ -10,6 +10,7 @@ defmodule NilmWeb.Router do
   end
 
   pipeline :api do
+    plug :fetch_session
     plug :accepts, ["json"]
   end
 
@@ -23,7 +24,9 @@ defmodule NilmWeb.Router do
   end
 
   # Other scopes may use custom stacks.
-  # scope "/api", NilmWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", NilmWeb do
+    pipe_through :api
+
+    resources "/users", UserController
+  end
 end
