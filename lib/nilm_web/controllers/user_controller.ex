@@ -14,7 +14,7 @@ defmodule NilmWeb.UserController do
       User.changeset(%User{}, %{
         email: params["email"],
         name: params["name"],
-        bio: params["bio"]
+        password: params["password"]
       })
 
     case Repo.insert(changeset) do
