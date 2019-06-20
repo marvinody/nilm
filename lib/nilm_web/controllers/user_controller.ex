@@ -9,6 +9,16 @@ defmodule NilmWeb.UserController do
     json(conn, users)
   end
 
+  def create(conn, %{"email" => email}) do
+    case Repo.insert(%User{email: email}) do
+      {:ok, user} ->
+        render(conn, "show.json", user: user)
+
+      {:error, error} ->
+        IO.puts(error)
+    end
+  end
+
   def show(conn, %{"message" => message}) do
     render(conn, "show.html", message: message)
   end
