@@ -2,11 +2,15 @@ defmodule Nilm.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Nilm.Post
+
   schema "users" do
     field :email, :string
     field :name, :string
     field :password_hash, :string
     field :password, :string, virtual: true
+
+    has_many :posts, Post
 
     timestamps()
   end
