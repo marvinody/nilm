@@ -5,8 +5,7 @@ defmodule NilmWeb.UserController do
 
   def index(conn, _params) do
     users = Repo.all(User)
-
-    json(conn, users)
+    render(conn, "index.json", users: users)
   end
 
   def show(conn, %{"id" => id}) do
@@ -33,7 +32,30 @@ defmodule NilmWeb.UserController do
         render(conn, "show.json", user: user)
 
       {:error, changeset} ->
-        render(conn, "errors.json", changeset: changeset)
+        render(conn, "errors.json", errorify(changeset))
     end
+  end
+
+  def login(conn, %{"email" => email, "password" => password}) do
+    case User.authenticate_user(email, password) do
+      {:ok, user} ->
+        conn
+        |> put_session(:user_id, user.id)
+        |> render("show.json", user: user)
+
+      {:error, error} ->
+        render(conn, "errors.json", errors: [error])
+    end
+  end
+
+  defp errorify(changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+      Enum.reduce(opts, msg, fn {key, value}, acc ->
+        String.replace(acc, "%{#{key}}", to_string(value))
+      end)
+    end)
+    |> Enum.map(fn {key, errs} ->
+      Atom.to_string(key) <> " " <> Enum.join(errs, " ")
+    end)
   end
 end

@@ -28,6 +28,7 @@ defmodule NilmWeb.Router do
     pipe_through :api
 
     resources "/users", UserController
+    post "/users/login", UserController, :login
     resources "/posts", PostController
   end
 end
