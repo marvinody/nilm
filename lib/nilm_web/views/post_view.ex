@@ -5,21 +5,13 @@ defmodule NilmWeb.PostView do
     render_one(post, NilmWeb.PostView, "post.json")
   end
 
-  def render("errors.json", %{changeset: changeset}) do
+  def render("errors.json", %{errors: errors}) do
     %{
-      errors:
-        Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-          Enum.reduce(opts, msg, fn {key, value}, acc ->
-            String.replace(acc, "%{#{key}}", to_string(value))
-          end)
-        end)
-        |> Enum.map(fn {key, errs} ->
-          Atom.to_string(key) <> " " <> Enum.join(errs, " ")
-        end)
+      errors: errors
     }
   end
 
-  def render("errors.json", %{error: error}) do
+  def render("error.json", %{error: error}) do
     %{errors: [error]}
   end
 
