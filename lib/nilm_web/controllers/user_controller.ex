@@ -29,12 +29,10 @@ defmodule NilmWeb.UserController do
 
     case Repo.insert(changeset) do
       {:ok, user} ->
+        conn = put_session(conn, :user_id, user.id)
         render(conn, "show.json", user: user)
 
       {:error, changeset} ->
-        IO.puts("CHANGESET")
-        IO.inspect(changeset)
-
         render(conn, "errors.json", changeset: changeset)
     end
   end
