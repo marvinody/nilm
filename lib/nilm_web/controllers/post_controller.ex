@@ -5,14 +5,13 @@ defmodule NilmWeb.PostController do
 
   def index(conn, _params) do
     posts = Repo.all(Post)
-
-    json(conn, posts)
+    render(conn, "index.json", posts: posts)
   end
 
   def show(conn, %{"id" => id}) do
     case Repo.get(Post, id) do
       nil ->
-        render(conn, "error.json", %{error: "No such post"})
+        render(conn, "errors.json", errors: ["No such post"])
 
       post ->
         render(conn, "show.json", post: post)
@@ -65,7 +64,7 @@ defmodule NilmWeb.PostController do
         render(conn, "show.json", post: post)
 
       {:error, conn, errors} ->
-        render(conn, "errors.json", errors)
+        render(conn, "errors.json", errors: errors)
     end
   end
 
