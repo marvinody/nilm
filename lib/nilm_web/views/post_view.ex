@@ -20,7 +20,7 @@ defmodule NilmWeb.PostView do
       title: post.title,
       id: post.id,
       body: post.body,
-      user_id: post.user_id
+      user: render_one(post.user, NilmWeb.UserView, "simple_user.json")
     }
   end
 end

@@ -15,6 +15,13 @@ defmodule NilmWeb.UserView do
     }
   end
 
+  def render("simple_user.json", %{user: user}) do
+    %{
+      id: user.id,
+      name: user.name
+    }
+  end
+
   def render("user.json", %{user: user}) do
     %{
       email: user.email,

@@ -2,9 +2,10 @@ defmodule NilmWeb.PostController do
   use NilmWeb, :controller
   alias Nilm.Repo
   alias Nilm.Post
+  import Ecto.Query
 
   def index(conn, _params) do
-    posts = Repo.all(Post)
+    posts = Repo.all(from p in Post, preload: [:user])
     render(conn, "index.json", posts: posts)
   end
 
