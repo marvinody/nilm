@@ -1,12 +1,14 @@
 module Main exposing (Model, Msg(..), init, main, signUp, update, view)
 
 import Browser
+import Browser.Navigation as Nav
 import Html exposing (Html, button, div, h1, img, input, text)
 import Html.Attributes exposing (name, placeholder, src, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Http exposing (..)
 import Json.Decode as D exposing (Decoder)
 import Json.Encode as E
+import Url
 
 
 
@@ -14,7 +16,9 @@ import Json.Encode as E
 
 
 type alias Model =
-    { email : String
+    { key : Nav.Key
+    , url : Url.Url
+    , email : String
     , password : String
     , name : String
     , user : User
@@ -22,11 +26,9 @@ type alias Model =
     }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( Model "" "" "" newUser ""
-    , Cmd.none
-    )
+init : flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+init flags url key =
+    ( Model key url "" "" "" newUser "", Cmd.none )
 
 
 newUser =
@@ -46,6 +48,9 @@ type Msg
     | SetPassword String
     | GotUser (Result Http.Error User)
     | Error Http.Error
+    | LinkClicked Browser.UrlRequest
+    | UrlChanged Url.Url
+    | RemoveError
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -70,6 +75,9 @@ update msg model =
 
         SignUp ->
             ( model, signUp model )
+
+        RemoveError ->
+            ( { model | error = "" }, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
@@ -120,12 +128,36 @@ nameDecoder =
 ---- VIEW ----
 
 
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
+    { title = "Nilm"
+    , body =
+        [ div []
+            [ viewError model
+            , img [ src "/logo.svg" ] []
+            , h1 [] [ text "Hello world" ]
+            , viewSignUp model
+            ]
+        ]
+    }
+
+
+viewError : Model -> Html Msg
+viewError model =
+    case model.error of
+        "" ->
+            div [] []
+
+        _ ->
+            div [ onClick RemoveError ]
+                [ text model.error
+                ]
+
+
+viewSignUp : Model -> Html Msg
+viewSignUp model =
     div []
-        [ img [ src "/logo.svg" ] []
-        , h1 [] [ text "Hello world" ]
-        , viewInput "text" "Name" model.name SetName
+        [ viewInput "text" "Name" model.name SetName
         , viewInput "text" "Email" model.email SetEmail
         , viewInput "text" "Password" model.password SetPassword
         , button [ onClick SignUp ] [ text "Sign Up" ]
@@ -143,12 +175,23 @@ viewInput t p v toMsg =
 
 main : Program () Model Msg
 main =
-    Browser.element
-        { view = view
-        , init = \_ -> init
+    Browser.application
+        { init = init
+        , view = view
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
+        , onUrlChange = UrlChanged
+        , onUrlRequest = LinkClicked
         }
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none
 
 
 errorToString : Http.Error -> String
