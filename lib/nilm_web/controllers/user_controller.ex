@@ -11,7 +11,7 @@ defmodule NilmWeb.UserController do
   def show(conn, %{"id" => id}) do
     case Repo.get(User, id) do
       nil ->
-        render(conn, "error.json", %{error: "No such user"})
+        render(conn, "errors.json", errors: ["No such user"])
 
       user ->
         render(conn, "show.json", user: user)
@@ -32,7 +32,7 @@ defmodule NilmWeb.UserController do
         render(conn, "show.json", user: user)
 
       {:error, changeset} ->
-        render(conn, "errors.json", errorify(changeset))
+        render(conn, "errors.json", errors: errorify(changeset))
     end
   end
 
