@@ -11,6 +11,7 @@ defmodule NilmWeb.UserController do
   def show(conn, %{"id" => id}) do
     case Repo.get(User, id) do
       nil ->
+        put_status(conn, :not_found)
         render(conn, "errors.json", errors: ["No such user"])
 
       user ->
@@ -29,10 +30,13 @@ defmodule NilmWeb.UserController do
     case Repo.insert(changeset) do
       {:ok, user} ->
         conn = put_session(conn, :user_id, user.id)
+        put_status(conn, :created)
         render(conn, "show.json", user: user)
 
       {:error, changeset} ->
-        render(conn, "errors.json", errors: errorify(changeset))
+        conn
+        |> put_status(:bad_request)
+        |> render("errors.json", errors: errorify(changeset))
     end
   end
 
@@ -44,6 +48,7 @@ defmodule NilmWeb.UserController do
         |> render("show.json", user: user)
 
       {:error, error} ->
+        put_status(conn, :unauthorized)
         render(conn, "errors.json", errors: [error])
     end
   end
