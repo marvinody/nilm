@@ -42,5 +42,7 @@ defmodule NilmWeb.Endpoint do
     key: "_nilm_key",
     signing_salt: "PLc03AQs"
 
+  plug CORSPlug
+
   plug NilmWeb.Router
 end
