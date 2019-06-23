@@ -6,7 +6,7 @@ defmodule NilmWeb.PostController do
   import Ecto.Query
 
   def index(conn, _params) do
-    posts = Repo.all(from p in Post, preload: [:author])
+    posts = Repo.all(from p in Post, preload: [:user])
     render(conn, "index.json", posts: posts)
   end
 
@@ -35,7 +35,7 @@ defmodule NilmWeb.PostController do
      Post.changeset(%Post{}, %{
        title: params["title"],
        body: params["body"],
-       author_id: params["user_id"]
+       user_id: params["user_id"]
      })}
   end
 
@@ -54,7 +54,7 @@ defmodule NilmWeb.PostController do
   defp load_user({:error, conn, message}), do: {:error, conn, message}
 
   defp load_user({:ok, conn, post}) do
-    {:ok, conn, Repo.preload(post, :author)}
+    {:ok, conn, Repo.preload(post, :user)}
   end
 
   defp render_post(result) do

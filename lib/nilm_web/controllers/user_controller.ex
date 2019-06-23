@@ -47,8 +47,8 @@ defmodule NilmWeb.UserController do
     end
   end
 
-  def login(conn, %{"email" => email, "password" => password}) do
-    case User.authenticate_user(email, password) do
+  def login(conn, %{"name" => name, "password" => password}) do
+    case User.authenticate_user(name, password) do
       {:ok, user} ->
         conn
         |> put_session(:user_id, user.id)

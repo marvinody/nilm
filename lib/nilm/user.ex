@@ -39,8 +39,8 @@ defmodule Nilm.User do
     changeset
   end
 
-  def authenticate_user(email, password) do
-    query = from(u in User, where: u.email == ^email)
+  def authenticate_user(name, password) do
+    query = from(u in User, where: u.name == ^name)
 
     query
     |> Repo.one()
@@ -49,7 +49,7 @@ defmodule Nilm.User do
 
   defp verify_password(nil, _) do
     Bcrypt.no_user_verify()
-    {:error, "Wrong email or password"}
+    {:error, "Wrong name or password"}
   end
 
   defp verify_password(user, password) do
@@ -58,7 +58,7 @@ defmodule Nilm.User do
         {:ok, user}
 
       false ->
-        {:error, "Wrong email or password"}
+        {:error, "Wrong name or password"}
     end
   end
 end
