@@ -24,3 +24,43 @@ img {
   margin: 20px 0;
   max-width: 200px;
 }
+
+.container {
+  display: flex;
+}
+
+.main.container {
+  width: 80vw;
+  height: 80vh;
+  flex-direction: column;
+  margin: auto;
+}
+
+.posts.container {
+  display: flex;
+  flex: 2;
+  flex-direction: column;
+  padding: 15px;
+  align-items: flex-start;
+}
+
+.post.title {
+  font-size: 1.2em;
+}
+
+.post.author {
+  text-align: left;
+  margin-left: 5px;
+}
+
+.side-info.container {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.post.container {
+  padding: 10px;
+  margin: 5px;
+  flex-direction: column;
+}

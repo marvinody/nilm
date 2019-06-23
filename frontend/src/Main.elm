@@ -3,8 +3,8 @@ module Main exposing (Model, Msg(..), init, main, signUp, update, view)
 import Browser
 import Browser.Navigation as Nav
 import Data exposing (..)
-import Html exposing (Html, a, button, div, h1, img, input, text)
-import Html.Attributes exposing (href, name, placeholder, src, type_, value)
+import Html exposing (Html, a, button, div, form, h1, img, input, text)
+import Html.Attributes exposing (class, href, name, placeholder, src, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Http exposing (..)
 import Url
@@ -181,12 +181,15 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Nilm"
     , body =
-        [ div []
+        [ div [ class "main container" ]
             [ viewError model
-            , img [ src "/logo.svg" ] []
-            , viewWelcome model
-            , viewPosts model
-            , viewAuth model
+            , div [ class "container" ]
+                [ viewPosts model
+                , div [ class "side-info container" ]
+                    [ viewWelcome model
+                    , viewAuth model
+                    ]
+                ]
             ]
         ]
     }
@@ -206,7 +209,12 @@ viewError model =
 
 viewAuth : Model -> Html Msg
 viewAuth model =
-    viewLogin model
+    case model.user.id of
+        0 ->
+            viewLogin model
+
+        _ ->
+            div [] []
 
 
 viewLogin : Model -> Html Msg
@@ -237,23 +245,34 @@ viewWelcome : Model -> Html Msg
 viewWelcome model =
     case model.user.id of
         0 ->
-            h1 [] [ text "Hello world" ]
+            h1 [] [ text "Welcome to Nilm" ]
 
         _ ->
-            h1 [] [ text ("Welcome back" ++ model.user.name) ]
+            h1 [] [ text ("Welcome back, " ++ model.user.name) ]
 
 
 viewPosts : Model -> Html Msg
 viewPosts model =
-    div [] (List.map viewPost model.posts)
+    div [ class "posts container" ] (List.map viewPost model.posts)
 
 
 viewPost : Post -> Html Msg
 viewPost post =
-    div []
-        [ div [] [ text post.title ]
-        , div [] [ text post.body ]
-        , div [] [ text post.user.name ]
+    let
+        post_url =
+            "/p/" ++ String.fromInt post.id
+
+        user_url =
+            "/u/" ++ post.author.name
+    in
+    div [ class "post container" ]
+        [ div [ class "post title" ]
+            [ a [ href post_url ] [ text post.title ]
+            ]
+        , div [ class "post author" ]
+            [ a [ href user_url ] [ text post.author.name ] ]
+
+        -- , div [ class "post body" ] [ text post.body ]
         ]
 
 
