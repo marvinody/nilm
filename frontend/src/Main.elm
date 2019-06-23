@@ -10,6 +10,26 @@ import Http exposing (..)
 import Url
 
 
+base_url =
+    "http://localhost:4000/api"
+
+
+users_url =
+    base_url ++ "/users"
+
+
+me_url =
+    users_url ++ "/me"
+
+
+login_url =
+    users_url ++ "/login"
+
+
+posts_url =
+    base_url ++ "/posts"
+
+
 
 ---- MODEL ----
 
@@ -28,7 +48,12 @@ type alias Model =
 
 init : flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Model key url "" "" "" newUser [] "", fetchPosts )
+    ( Model key url "" "" "" newUser [] ""
+    , Cmd.batch
+        [ fetchPosts
+        , fetchSelf
+        ]
+    )
 
 
 newUser =
@@ -40,15 +65,15 @@ newUser =
 
 
 type Msg
-    = NoOp
-    | Login
+    = Login
     | SignUp
     | SetEmail String
     | SetName String
     | SetPassword String
+    | GotInitialUser (Result Http.Error User)
     | GotUser (Result Http.Error User)
     | GotPosts (Result Http.Error Posts)
-    | Error Http.Error
+      -- | Error Http.Error
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
     | RemoveError
@@ -73,15 +98,29 @@ update msg model =
 
                 Err err ->
                     ( { model | error = errorToString err }, Cmd.none )
+
+        GotInitialUser result ->
+            case result of
+                Ok user ->
+                    ( { model | user = user, error = "" }, Cmd.none )
+
+                -- don't care about this error because this is bg info
+                Err _ ->
+                    ( model, Cmd.none )
+
         GotPosts result ->
             case result of
                 Ok posts ->
-                    ({model | posts = posts, error = ""}, Cmd.none)
+                    ( { model | posts = posts, error = "" }, Cmd.none )
+
                 Err err ->
                     ( { model | error = errorToString err }, Cmd.none )
 
         SignUp ->
             ( model, signUp model )
+
+        Login ->
+            ( model, login model )
 
         RemoveError ->
             ( { model | error = "" }, Cmd.none )
@@ -89,14 +128,14 @@ update msg model =
         UrlChanged url ->
             ( { model | url = url }, Cmd.none )
 
-        _ ->
+        LinkClicked _ ->
             ( model, Cmd.none )
 
 
 signUp : Model -> Cmd Msg
 signUp model =
     Http.post
-        { url = "http://localhost:4000/api/users"
+        { url = base_url
         , body =
             Http.jsonBody
                 (signUpEncoder
@@ -108,11 +147,29 @@ signUp model =
         }
 
 
+login : Model -> Cmd Msg
+login model =
+    Http.post
+        { url = login_url
+        , body =
+            Http.jsonBody (loginEncoder model.name model.password)
+        , expect = Http.expectJson GotUser userDecoder
+        }
+
+
 fetchPosts : Cmd Msg
 fetchPosts =
     Http.get
-        { url = "http://localhost:4000/api/posts"
+        { url = posts_url
         , expect = Http.expectJson GotPosts postsDecoder
+        }
+
+
+fetchSelf : Cmd Msg
+fetchSelf =
+    Http.get
+        { url = me_url
+        , expect = Http.expectJson GotInitialUser userDecoder
         }
 
 
@@ -127,9 +184,9 @@ view model =
         [ div []
             [ viewError model
             , img [ src "/logo.svg" ] []
-            , h1 [] [ text "Hello world" ]
+            , viewWelcome model
             , viewPosts model
-            , viewSignUp model
+            , viewAuth model
             ]
         ]
     }
@@ -147,6 +204,20 @@ viewError model =
                 ]
 
 
+viewAuth : Model -> Html Msg
+viewAuth model =
+    viewLogin model
+
+
+viewLogin : Model -> Html Msg
+viewLogin model =
+    div []
+        [ viewInput "text" "Name" model.name SetName
+        , viewInput "text" "Password" model.password SetPassword
+        , button [ onClick Login ] [ text "Login" ]
+        ]
+
+
 viewSignUp : Model -> Html Msg
 viewSignUp model =
     div []
@@ -162,17 +233,30 @@ viewInput t p v toMsg =
     input [ type_ t, placeholder p, value v, onInput toMsg ] []
 
 
+viewWelcome : Model -> Html Msg
+viewWelcome model =
+    case model.user.id of
+        0 ->
+            h1 [] [ text "Hello world" ]
+
+        _ ->
+            h1 [] [ text ("Welcome back" ++ model.user.name) ]
+
+
 viewPosts : Model -> Html Msg
 viewPosts model =
     div [] (List.map viewPost model.posts)
 
+
 viewPost : Post -> Html Msg
 viewPost post =
-    div [] [
-        div [] [text post.title],
-        div [] [text post.body],
-        div [] [text post.user.name]
-    ]
+    div []
+        [ div [] [ text post.title ]
+        , div [] [ text post.body ]
+        , div [] [ text post.user.name ]
+        ]
+
+
 
 ---- PROGRAM ----
 

@@ -1,4 +1,4 @@
-module Data exposing (Post, Posts, User, postDecoder, postsDecoder, signUpEncoder, userDecoder)
+module Data exposing (Post, Posts, User, loginEncoder, postDecoder, postsDecoder, signUpEncoder, userDecoder)
 
 import Json.Decode as D exposing (Decoder)
 import Json.Encode as E
@@ -9,6 +9,14 @@ signUpEncoder email name password =
     E.object
         [ ( "email", E.string email )
         , ( "password", E.string password )
+        , ( "name", E.string name )
+        ]
+
+
+loginEncoder : String -> String -> E.Value
+loginEncoder name password =
+    E.object
+        [ ( "password", E.string password )
         , ( "name", E.string name )
         ]
 
