@@ -55,8 +55,9 @@ defmodule NilmWeb.UserController do
         |> render("show.json", user: user)
 
       {:error, error} ->
-        put_status(conn, :unauthorized)
-        render(conn, "errors.json", errors: [error])
+        conn
+        |> put_status(:bad_request)
+        |> render("errors.json", errors: [error])
     end
   end
 
