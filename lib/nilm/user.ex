@@ -24,6 +24,7 @@ defmodule Nilm.User do
     |> cast(attrs, [:name, :email, :password])
     |> validate_required([:email, :password])
     |> unique_constraint(:email)
+    |> unique_constraint(:name)
     |> put_password_hash()
   end
 
