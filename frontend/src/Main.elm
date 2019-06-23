@@ -2,12 +2,11 @@ module Main exposing (Model, Msg(..), init, main, signUp, update, view)
 
 import Browser
 import Browser.Navigation as Nav
-import Html exposing (Html, button, div, h1, img, input, text)
-import Html.Attributes exposing (name, placeholder, src, type_, value)
+import Data exposing (User, signUpEncoder, userDecoder)
+import Html exposing (Html, a, button, div, h1, img, input, text)
+import Html.Attributes exposing (href, name, placeholder, src, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Http exposing (..)
-import Json.Decode as D exposing (Decoder)
-import Json.Encode as E
 import Url
 
 
@@ -68,7 +67,7 @@ update msg model =
         GotUser result ->
             case result of
                 Ok user ->
-                    ( { model | user = user }, Cmd.none )
+                    ( { model | user = user, error = "" }, Cmd.none )
 
                 Err err ->
                     ( { model | error = errorToString err }, Cmd.none )
@@ -79,6 +78,9 @@ update msg model =
         RemoveError ->
             ( { model | error = "" }, Cmd.none )
 
+        UrlChanged url ->
+            ( { model | url = url }, Cmd.none )
+
         _ ->
             ( model, Cmd.none )
 
@@ -87,41 +89,15 @@ signUp : Model -> Cmd Msg
 signUp model =
     Http.post
         { url = "http://localhost:4000/api/users"
-        , body = Http.jsonBody (signUpBody model)
+        , body =
+            Http.jsonBody
+                (signUpEncoder
+                    model.email
+                    model.name
+                    model.password
+                )
         , expect = Http.expectJson GotUser userDecoder
         }
-
-
-signUpBody : Model -> E.Value
-signUpBody model =
-    E.object
-        [ ( "email", E.string model.email )
-        , ( "password", E.string model.password )
-        , ( "name", E.string model.name )
-        ]
-
-
-type alias User =
-    { id : Int
-    , name : String
-    }
-
-
-userDecoder : Decoder User
-userDecoder =
-    D.map2 User
-        idDecoder
-        nameDecoder
-
-
-idDecoder : Decoder Int
-idDecoder =
-    D.field "id" D.int
-
-
-nameDecoder : Decoder String
-nameDecoder =
-    D.field "name" D.string
 
 
 
