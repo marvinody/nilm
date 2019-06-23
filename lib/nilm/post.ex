@@ -8,7 +8,7 @@ defmodule Nilm.Post do
     field :body, :string
     field :title, :string
 
-    belongs_to :user, User
+    belongs_to :author, User
 
     timestamps()
   end
@@ -16,7 +16,7 @@ defmodule Nilm.Post do
   @doc false
   def changeset(post, attrs) do
     post
-    |> cast(attrs, [:title, :body, :user_id])
-    |> validate_required([:title, :user_id])
+    |> cast(attrs, [:title, :body, :author_id])
+    |> validate_required([:title, :author_id])
   end
 end
