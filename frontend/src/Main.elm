@@ -2,7 +2,7 @@ module Main exposing (Model, Msg(..), init, main, signUp, update, view)
 
 import Browser
 import Browser.Navigation as Nav
-import Data exposing (User, signUpEncoder, userDecoder)
+import Data exposing (..)
 import Html exposing (Html, a, button, div, h1, img, input, text)
 import Html.Attributes exposing (href, name, placeholder, src, type_, value)
 import Html.Events exposing (onClick, onInput)
@@ -21,13 +21,14 @@ type alias Model =
     , password : String
     , name : String
     , user : User
+    , posts : Posts
     , error : String
     }
 
 
 init : flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Model key url "" "" "" newUser "", Cmd.none )
+    ( Model key url "" "" "" newUser [] "", fetchPosts )
 
 
 newUser =
@@ -46,6 +47,7 @@ type Msg
     | SetName String
     | SetPassword String
     | GotUser (Result Http.Error User)
+    | GotPosts (Result Http.Error Posts)
     | Error Http.Error
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
@@ -69,6 +71,12 @@ update msg model =
                 Ok user ->
                     ( { model | user = user, error = "" }, Cmd.none )
 
+                Err err ->
+                    ( { model | error = errorToString err }, Cmd.none )
+        GotPosts result ->
+            case result of
+                Ok posts ->
+                    ({model | posts = posts, error = ""}, Cmd.none)
                 Err err ->
                     ( { model | error = errorToString err }, Cmd.none )
 
@@ -100,6 +108,14 @@ signUp model =
         }
 
 
+fetchPosts : Cmd Msg
+fetchPosts =
+    Http.get
+        { url = "http://localhost:4000/api/posts"
+        , expect = Http.expectJson GotPosts postsDecoder
+        }
+
+
 
 ---- VIEW ----
 
@@ -112,6 +128,7 @@ view model =
             [ viewError model
             , img [ src "/logo.svg" ] []
             , h1 [] [ text "Hello world" ]
+            , viewPosts model
             , viewSignUp model
             ]
         ]
@@ -145,6 +162,17 @@ viewInput t p v toMsg =
     input [ type_ t, placeholder p, value v, onInput toMsg ] []
 
 
+viewPosts : Model -> Html Msg
+viewPosts model =
+    div [] (List.map viewPost model.posts)
+
+viewPost : Post -> Html Msg
+viewPost post =
+    div [] [
+        div [] [text post.title],
+        div [] [text post.body],
+        div [] [text post.user.name]
+    ]
 
 ---- PROGRAM ----
 

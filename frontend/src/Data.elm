@@ -1,4 +1,4 @@
-module Data exposing (User, signUpEncoder, userDecoder)
+module Data exposing (Post, Posts, User, postDecoder, postsDecoder, signUpEncoder, userDecoder)
 
 import Json.Decode as D exposing (Decoder)
 import Json.Encode as E
@@ -34,3 +34,44 @@ idDecoder =
 nameDecoder : Decoder String
 nameDecoder =
     D.field "name" D.string
+
+
+type alias Posts =
+    List Post
+
+
+type alias Post =
+    { id : Int
+    , title : String
+    , body : String
+    , user : User
+    }
+
+
+titleDecoder : Decoder String
+titleDecoder =
+    D.field "title" D.string
+
+
+bodyDecoder : Decoder String
+bodyDecoder =
+    D.field "body" D.string
+
+
+authorDecoder : Decoder User
+authorDecoder =
+    D.field "author" userDecoder
+
+
+postDecoder : Decoder Post
+postDecoder =
+    D.map4 Post
+        idDecoder
+        titleDecoder
+        bodyDecoder
+        authorDecoder
+
+
+postsDecoder : Decoder Posts
+postsDecoder =
+    D.list postDecoder
