@@ -2,7 +2,7 @@ defmodule NilmWeb.UserView do
   use NilmWeb, :view
 
   def render("index.json", %{users: users}) do
-    render_many(users, NilmWeb.UserView, "user.json")
+    render_many(users, NilmWeb.UserView, "simple_user.json")
   end
 
   def render("show.json", %{user: user}) do

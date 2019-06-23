@@ -2,10 +2,17 @@ defmodule NilmWeb.UserController do
   use NilmWeb, :controller
   alias Nilm.Repo
   alias Nilm.User
+  alias NilmWeb.Utils
 
   def index(conn, _params) do
     users = Repo.all(User)
     render(conn, "index.json", users: users)
+  end
+
+  def me(conn, params) do
+    Utils.get_user_id(conn, params)
+    |> get_user
+    |> render_self
   end
 
   def show(conn, %{"id" => id}) do
@@ -36,7 +43,7 @@ defmodule NilmWeb.UserController do
       {:error, changeset} ->
         conn
         |> put_status(:bad_request)
-        |> render("errors.json", errors: errorify(changeset))
+        |> render("errors.json", errors: Utils.errorify(changeset))
     end
   end
 
@@ -53,14 +60,25 @@ defmodule NilmWeb.UserController do
     end
   end
 
-  defp errorify(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-      Enum.reduce(opts, msg, fn {key, value}, acc ->
-        String.replace(acc, "%{#{key}}", to_string(value))
-      end)
-    end)
-    |> Enum.map(fn {key, errs} ->
-      Atom.to_string(key) <> " " <> Enum.join(errs, " ")
-    end)
+  defp get_user({:error, conn, message}), do: {:error, conn, message}
+
+  defp get_user({:ok, conn, %{"user_id" => id}}) do
+    case Repo.get(User, id) do
+      nil ->
+        {:error, conn, ["Please login to do that"]}
+
+      user ->
+        {:ok, conn, user}
+    end
+  end
+
+  defp render_self(result) do
+    case result do
+      {:ok, conn, user} ->
+        render(conn, "user.json", user: user)
+
+      {:error, conn, errors} ->
+        render(conn, "errors.json", errors: errors)
+    end
   end
 end

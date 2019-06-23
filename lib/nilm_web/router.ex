@@ -27,8 +27,10 @@ defmodule NilmWeb.Router do
   scope "/api", NilmWeb do
     pipe_through :api
 
+    get "/users/me", UserController, :me
     resources "/users", UserController
     post "/users/login", UserController, :login
+
     resources "/posts", PostController
   end
 end

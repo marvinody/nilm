@@ -2,6 +2,7 @@ defmodule NilmWeb.PostController do
   use NilmWeb, :controller
   alias Nilm.Repo
   alias Nilm.Post
+  alias NilmWeb.Utils
   import Ecto.Query
 
   def index(conn, _params) do
@@ -20,21 +21,11 @@ defmodule NilmWeb.PostController do
   end
 
   def create(conn, params) do
-    get_user_id(conn, params)
+    Utils.get_user_id(conn, params)
     |> make_post_changeset
     |> insert_post
     |> load_user
     |> render_post
-  end
-
-  defp get_user_id(conn, params) do
-    case get_session(conn, "user_id") do
-      nil ->
-        {:error, conn, %{errors: ["Please login to do that"]}}
-
-      user_id ->
-        {:ok, conn, Map.put(params, "user_id", IO.inspect(user_id))}
-    end
   end
 
   defp make_post_changeset({:error, conn, message}), do: {:error, conn, message}
@@ -56,7 +47,7 @@ defmodule NilmWeb.PostController do
         {:ok, conn, post}
 
       {:error, changeset} ->
-        {:error, conn, errorify(changeset)}
+        {:error, conn, NilmWeb.Utils.errorify(changeset)}
     end
   end
 
@@ -74,16 +65,5 @@ defmodule NilmWeb.PostController do
       {:error, conn, errors} ->
         render(conn, "errors.json", errors: errors)
     end
-  end
-
-  defp errorify(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-      Enum.reduce(opts, msg, fn {key, value}, acc ->
-        String.replace(acc, "%{#{key}}", to_string(value))
-      end)
-    end)
-    |> Enum.map(fn {key, errs} ->
-      Atom.to_string(key) <> " " <> Enum.join(errs, " ")
-    end)
   end
 end
