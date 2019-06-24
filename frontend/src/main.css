@@ -45,7 +45,7 @@ img {
 }
 
 .post.title {
-  font-size: 1.2em;
+  font-size: 1.5em;
   text-align: left;
 }
 
@@ -69,6 +69,11 @@ img {
   padding: 10px;
   margin: 5px;
   flex-direction: column;
+}
+
+.post.body {
+  padding: 20px;
+  margin: 10px;
 }
 
 .auth.container {
