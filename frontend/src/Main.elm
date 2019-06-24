@@ -3,13 +3,14 @@ module Main exposing (Model, Msg(..), init, main, signUp, update, view)
 import Browser
 import Browser.Navigation as Nav
 import Data exposing (..)
-import Html exposing (Html, a, button, div, form, h1, img, input, text)
-import Html.Attributes exposing (class, disabled, href, name, placeholder, src, type_, value)
+import Html exposing (Html, a, button, div, form, h1, img, input, span, text)
+import Html.Attributes exposing (class, disabled, href, name, placeholder, src, title, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Http exposing (..)
 import Routes
 import Task
 import Time
+import Timehaze
 import Url
 
 
@@ -292,24 +293,31 @@ viewWelcome model =
 
 viewPosts : Model -> Html Msg
 viewPosts model =
-    div [ class "posts container" ] (List.map viewPost model.posts)
+    div [ class "posts container" ] (List.map (viewPost model.time) model.posts)
 
 
-viewPost : Post -> Html Msg
-viewPost post =
+viewPost : Time.Posix -> Post -> Html Msg
+viewPost cur_time post =
     let
         post_url =
             "/p/" ++ String.fromInt post.id
 
         user_url =
             "/u/" ++ post.author.name
+
+        elapsed_time =
+            Timehaze.elapsed_time post.created_at cur_time
     in
     div [ class "post container" ]
         [ div [ class "post title" ]
             [ a [ href post_url ] [ text post.title ]
             ]
-        , div [ class "post author" ]
-            [ a [ href user_url ] [ text post.author.name ] ]
+        , div [ class "post info" ]
+            [ div [ class "post author" ]
+                [ a [ href user_url ] [ text post.author.name ] ]
+            , div [ class "post timestamp" ]
+                [ span [ title post.created_at_iso ] [ text (" - " ++ elapsed_time) ] ]
+            ]
 
         -- , div [ class "post body" ] [ text post.body ]
         ]

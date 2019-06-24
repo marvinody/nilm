@@ -46,11 +46,17 @@ img {
 
 .post.title {
   font-size: 1.2em;
+  text-align: left;
+}
+
+.post.info {
+  display: flex;
 }
 
 .post.author {
   text-align: left;
-  margin-left: 5px;
+  margin-left: 10px;
+  margin-right: 5px;
 }
 
 .side-info.container {

@@ -56,6 +56,7 @@ type alias Post =
     , body : String
     , author : User
     , created_at : Time.Posix
+    , created_at_iso : String
     }
 
 
@@ -76,12 +77,13 @@ authorDecoder =
 
 postDecoder : Decoder Post
 postDecoder =
-    D.map5 Post
+    D.map6 Post
         idDecoder
         titleDecoder
         bodyDecoder
         authorDecoder
         createdAtDecoder
+        createdAtISODecoder
 
 
 postsDecoder : Decoder Posts
@@ -92,3 +94,8 @@ postsDecoder =
 createdAtDecoder : Decoder Time.Posix
 createdAtDecoder =
     D.field "created_at" Iso8601.decoder
+
+
+createdAtISODecoder : Decoder String
+createdAtISODecoder =
+    D.field "created_at" D.string
