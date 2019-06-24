@@ -10,13 +10,19 @@ defmodule NilmWeb.PostController do
     render(conn, "index.json", posts: posts)
   end
 
-  def show(conn, %{"id" => id}) do
+  def show(conn, %{"id" => id} = params) do
+    get_post(id, conn, params)
+    |> load_user
+    |> render_post
+  end
+
+  defp get_post(id, conn, params) do
     case Repo.get(Post, id) do
       nil ->
-        render(conn, "errors.json", errors: ["No such post"])
+        {:error, conn, ["No such post"]}
 
       post ->
-        render(conn, "show.json", post: post)
+        {:ok, conn, post}
     end
   end
 
