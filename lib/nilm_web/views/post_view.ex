@@ -24,4 +24,13 @@ defmodule NilmWeb.PostView do
       created_at: post.inserted_at
     }
   end
+
+  def render("authorless_post.json", %{post: post}) do
+    %{
+      title: post.title,
+      id: post.id,
+      body: post.body,
+      created_at: post.inserted_at
+    }
+  end
 end

@@ -4,6 +4,8 @@ defmodule NilmWeb.UserController do
   alias Nilm.User
   alias NilmWeb.Utils
 
+  import Ecto.Query
+
   def index(conn, _params) do
     users = Repo.all(User)
     render(conn, "index.json", users: users)
@@ -11,18 +13,21 @@ defmodule NilmWeb.UserController do
 
   def me(conn, params) do
     Utils.get_user_id(conn, params)
-    |> get_user
+    |> get_self
     |> render_self
   end
 
-  def show(conn, %{"id" => id}) do
-    case Repo.get(User, id) do
-      nil ->
-        put_status(conn, :not_found)
-        render(conn, "errors.json", errors: ["No such user"])
+  def show(conn, params) do
+    case Integer.parse(params["id"]) do
+      :error ->
+        get_user(conn, %{"name" => params["id"]})
+        |> load_posts
+        |> render_user
 
-      user ->
-        render(conn, "show.json", user: user)
+      {_, _} ->
+        get_user(conn, params)
+        |> load_posts
+        |> render_user
     end
   end
 
@@ -61,9 +66,29 @@ defmodule NilmWeb.UserController do
     end
   end
 
-  defp get_user({:error, conn, message}), do: {:error, conn, message}
+  defp get_user(conn, %{"id" => id}) do
+    case Repo.get(User, id) do
+      nil ->
+        {:error, conn, ["No such user"]}
 
-  defp get_user({:ok, conn, %{"user_id" => id}}) do
+      user ->
+        {:ok, conn, user}
+    end
+  end
+
+  defp get_user(conn, %{"name" => name}) do
+    case Repo.get_by(User, name: name) do
+      nil ->
+        {:error, conn, ["No such user"]}
+
+      user ->
+        {:ok, conn, user}
+    end
+  end
+
+  defp get_self({:error, conn, message}), do: {:error, conn, message}
+
+  defp get_self({:ok, conn, %{"user_id" => id}}) do
     case Repo.get(User, id) do
       nil ->
         {:error, conn, ["Please login to do that"]}
@@ -73,6 +98,12 @@ defmodule NilmWeb.UserController do
     end
   end
 
+  defp load_posts({:error, conn, message}), do: {:error, conn, message}
+
+  defp load_posts({:ok, conn, user}) do
+    {:ok, conn, Repo.preload(user, :posts)}
+  end
+
   defp render_self(result) do
     case result do
       {:ok, conn, user} ->
@@ -80,6 +111,17 @@ defmodule NilmWeb.UserController do
 
       {:error, conn, errors} ->
         render(conn, "errors.json", errors: errors)
+    end
+  end
+
+  defp render_user(result) do
+    case result do
+      {:error, conn, errors} ->
+        put_status(conn, :not_found)
+        render(conn, "errors.json", errors: errors)
+
+      {:ok, conn, user} ->
+        render(conn, "show_full.json", user: user)
     end
   end
 end

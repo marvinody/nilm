@@ -5,6 +5,14 @@ defmodule NilmWeb.UserView do
     render_many(users, NilmWeb.UserView, "simple_user.json")
   end
 
+  def render("show_full.json", %{user: user}) do
+    %{
+      id: user.id,
+      name: user.name,
+      posts: render_many(user.posts, NilmWeb.PostView, "authorless_post.json")
+    }
+  end
+
   def render("show.json", %{user: user}) do
     render_one(user, NilmWeb.UserView, "user.json")
   end
