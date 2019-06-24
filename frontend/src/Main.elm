@@ -4,9 +4,10 @@ import Browser
 import Browser.Navigation as Nav
 import Data exposing (..)
 import Html exposing (Html, a, button, div, form, h1, img, input, text)
-import Html.Attributes exposing (class, href, name, placeholder, src, type_, value)
-import Html.Events exposing (onClick, onInput)
+import Html.Attributes exposing (class, disabled, href, name, placeholder, src, type_, value)
+import Html.Events exposing (onClick, onInput, onSubmit)
 import Http exposing (..)
+import Routes
 import Url
 
 
@@ -43,12 +44,14 @@ type alias Model =
     , user : User
     , posts : Posts
     , error : String
+    , displayLogin : Bool
+    , route : Routes.Route
     }
 
 
 init : flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Model key url "" "" "" newUser [] ""
+    ( Model key url "" "" "" newUser [] "" True (Routes.parse url)
     , Cmd.batch
         [ fetchPosts
         , fetchSelf
@@ -76,6 +79,7 @@ type Msg
       -- | Error Http.Error
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
+    | ToggleAccountCreation
     | RemoveError
 
 
@@ -90,6 +94,9 @@ update msg model =
 
         SetPassword password ->
             ( { model | password = password }, Cmd.none )
+
+        ToggleAccountCreation ->
+            ( { model | displayLogin = not model.displayLogin }, Cmd.none )
 
         GotUser result ->
             case result of
@@ -128,14 +135,19 @@ update msg model =
         UrlChanged url ->
             ( { model | url = url }, Cmd.none )
 
-        LinkClicked _ ->
-            ( model, Cmd.none )
+        LinkClicked urlRequest ->
+            case urlRequest of
+                Browser.Internal url ->
+                    ( model, Nav.pushUrl model.key (Url.toString url) )
+
+                Browser.External href ->
+                    ( model, Nav.load href )
 
 
 signUp : Model -> Cmd Msg
 signUp model =
     Http.post
-        { url = base_url
+        { url = users_url
         , body =
             Http.jsonBody
                 (signUpEncoder
@@ -211,7 +223,12 @@ viewAuth : Model -> Html Msg
 viewAuth model =
     case model.user.id of
         0 ->
-            viewLogin model
+            case model.displayLogin of
+                True ->
+                    viewLogin model
+
+                False ->
+                    viewSignUp model
 
         _ ->
             div [] []
@@ -219,20 +236,22 @@ viewAuth model =
 
 viewLogin : Model -> Html Msg
 viewLogin model =
-    div []
+    form [ onSubmit Login, class "auth container" ]
         [ viewInput "text" "Name" model.name SetName
         , viewInput "text" "Password" model.password SetPassword
         , button [ onClick Login ] [ text "Login" ]
+        , div [ class "account-toggle", onClick ToggleAccountCreation ] [ text "No account? Click here to sign up" ]
         ]
 
 
 viewSignUp : Model -> Html Msg
 viewSignUp model =
-    div []
+    form [ onSubmit SignUp, class "auth container" ]
         [ viewInput "text" "Name" model.name SetName
         , viewInput "text" "Email" model.email SetEmail
         , viewInput "text" "Password" model.password SetPassword
         , button [ onClick SignUp ] [ text "Sign Up" ]
+        , div [ class "account-toggle", onClick ToggleAccountCreation ] [ text "Have an account? Click here to login" ]
         ]
 
 
@@ -248,7 +267,7 @@ viewWelcome model =
             h1 [] [ text "Welcome to Nilm" ]
 
         _ ->
-            h1 [] [ text ("Welcome back, " ++ model.user.name) ]
+            h1 [] [ text ("Welcome, " ++ model.user.name) ]
 
 
 viewPosts : Model -> Html Msg

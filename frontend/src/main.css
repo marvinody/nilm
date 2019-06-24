@@ -64,3 +64,13 @@ img {
   margin: 5px;
   flex-direction: column;
 }
+
+.auth.container {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth.container>input,
+.auth.container>button {
+  margin-bottom: 5px;
+}
