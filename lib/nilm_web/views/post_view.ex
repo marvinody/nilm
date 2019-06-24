@@ -20,7 +20,8 @@ defmodule NilmWeb.PostView do
       title: post.title,
       id: post.id,
       body: post.body,
-      author: render_one(post.user, NilmWeb.UserView, "simple_user.json")
+      author: render_one(post.user, NilmWeb.UserView, "simple_user.json"),
+      created_at: post.inserted_at
     }
   end
 end

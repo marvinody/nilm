@@ -1,7 +1,9 @@
 module Data exposing (Post, Posts, User, loginEncoder, postDecoder, postsDecoder, signUpEncoder, userDecoder)
 
+import Iso8601
 import Json.Decode as D exposing (Decoder)
 import Json.Encode as E
+import Time
 
 
 signUpEncoder : String -> String -> String -> E.Value
@@ -53,6 +55,7 @@ type alias Post =
     , title : String
     , body : String
     , author : User
+    , created_at : Time.Posix
     }
 
 
@@ -73,13 +76,19 @@ authorDecoder =
 
 postDecoder : Decoder Post
 postDecoder =
-    D.map4 Post
+    D.map5 Post
         idDecoder
         titleDecoder
         bodyDecoder
         authorDecoder
+        createdAtDecoder
 
 
 postsDecoder : Decoder Posts
 postsDecoder =
     D.list postDecoder
+
+
+createdAtDecoder : Decoder Time.Posix
+createdAtDecoder =
+    D.field "created_at" Iso8601.decoder

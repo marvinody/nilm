@@ -8,6 +8,8 @@ import Html.Attributes exposing (class, disabled, href, name, placeholder, src, 
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Http exposing (..)
 import Routes
+import Task
+import Time
 import Url
 
 
@@ -46,14 +48,15 @@ type alias Model =
     , error : String
     , displayLogin : Bool
     , route : Routes.Route
+    , time : Time.Posix
     }
 
 
 init : flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Model key url "" "" "" newUser [] "" True (Routes.parse url)
+    ( Model key url "" "" "" newUser [] "" True (Routes.parse url) (Time.millisToPosix 0)
     , Cmd.batch
-        [ fetchPosts
+        [ fetchPostsAndTime
         , fetchSelf
         ]
     )
@@ -70,6 +73,7 @@ newUser =
 type Msg
     = Login
     | SignUp
+    | SetTime Time.Posix
     | SetEmail String
     | SetName String
     | SetPassword String
@@ -86,6 +90,9 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        SetTime time ->
+            ( { model | time = time }, Cmd.none )
+
         SetEmail email ->
             ( { model | email = email }, Cmd.none )
 
@@ -167,6 +174,19 @@ login model =
             Http.jsonBody (loginEncoder model.name model.password)
         , expect = Http.expectJson GotUser userDecoder
         }
+
+
+fetchPostsAndTime : Cmd Msg
+fetchPostsAndTime =
+    Cmd.batch
+        [ fetchTime
+        , fetchPosts
+        ]
+
+
+fetchTime : Cmd Msg
+fetchTime =
+    Task.perform SetTime Time.now
 
 
 fetchPosts : Cmd Msg
