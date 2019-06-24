@@ -46,6 +46,8 @@ type alias Model =
     , password : String
     , name : String
     , user : User
+    , postInputTitle : String
+    , postInputBody : String
     , posts : Posts
     , post : Post
     , error : String
@@ -61,7 +63,7 @@ emptyPost =
 
 init : flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Model key url (Routes.parse url) "" "" "" newUser [] emptyPost "" True (Time.millisToPosix 0)
+    ( Model key url (Routes.parse url) "" "" "" newUser "" "" [] emptyPost "" True (Time.millisToPosix 0)
     , Cmd.batch
         [ fetchSelf
         , fetchResource url
@@ -80,11 +82,15 @@ newUser =
 type Msg
     = Login
     | SignUp
+    | MakePost
     | SetTime Time.Posix
     | SetEmail String
     | SetName String
     | SetPassword String
+    | SetPostInputTitle String
+    | SetPostInputBody String
     | GotInitialUser (Result Http.Error User)
+    | CreatedPost (Result Http.Error Post)
     | GotUser (Result Http.Error User)
     | GotPost (Result Http.Error Post)
     | GotPosts (Result Http.Error Posts)
@@ -109,6 +115,12 @@ update msg model =
 
         SetPassword password ->
             ( { model | password = password }, Cmd.none )
+
+        SetPostInputTitle title ->
+            ( { model | postInputTitle = title }, Cmd.none )
+
+        SetPostInputBody body ->
+            ( { model | postInputBody = body }, Cmd.none )
 
         ToggleAccountCreation ->
             ( { model | displayLogin = not model.displayLogin }, Cmd.none )
@@ -146,11 +158,29 @@ update msg model =
                 Err err ->
                     ( { model | error = errorToString err }, Cmd.none )
 
+        CreatedPost result ->
+            case result of
+                Ok post ->
+                    let
+                        slug =
+                            slugify post.title
+
+                        post_url =
+                            "/p/" ++ String.fromInt post.id ++ "/" ++ slug
+                    in
+                    ( { model | post = post, error = "" }, Nav.pushUrl model.key post_url )
+
+                Err err ->
+                    ( { model | error = errorToString err }, Cmd.none )
+
         SignUp ->
             ( model, signUp model )
 
         Login ->
             ( model, login model )
+
+        MakePost ->
+            ( model, makePost model )
 
         RemoveError ->
             ( { model | error = "" }, Cmd.none )
@@ -208,11 +238,24 @@ signUp model =
 
 login : Model -> Cmd Msg
 login model =
-    Http.post
-        { url = login_url
-        , body =
+    Http.request
+        { body =
             Http.jsonBody (loginEncoder model.name model.password)
+        , method = "POST"
         , expect = Http.expectJson GotUser userDecoder
+        , url = login_url
+        , timeout = Nothing
+        , tracker = Nothing
+        , headers = []
+        }
+
+
+makePost : Model -> Cmd Msg
+makePost model =
+    Http.post
+        { url = posts_url
+        , body = Http.jsonBody (postInputEncoder model.postInputTitle model.postInputBody)
+        , expect = Http.expectJson CreatedPost postDecoder
         }
 
 
@@ -311,8 +354,18 @@ viewAuth model =
                 False ->
                     viewSignUp model
 
+        -- if we are logged in, let's display new post form
         _ ->
-            div [] []
+            viewPostInput model
+
+
+viewPostInput : Model -> Html Msg
+viewPostInput model =
+    form [ onSubmit MakePost, class "post form" ]
+        [ viewInput "text" "Title" model.postInputTitle SetPostInputTitle
+        , Html.textarea [ placeholder "Body", value model.postInputBody, onInput SetPostInputBody ] []
+        , button [ onClick MakePost ] [ text "Create Post" ]
+        ]
 
 
 viewLogin : Model -> Html Msg

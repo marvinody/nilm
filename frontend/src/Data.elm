@@ -1,4 +1,4 @@
-module Data exposing (Post, Posts, User, loginEncoder, postDecoder, postsDecoder, signUpEncoder, userDecoder)
+module Data exposing (Post, Posts, User, loginEncoder, postDecoder, postInputEncoder, postsDecoder, signUpEncoder, userDecoder)
 
 import Iso8601
 import Json.Decode as D exposing (Decoder)
@@ -20,6 +20,14 @@ loginEncoder name password =
     E.object
         [ ( "password", E.string password )
         , ( "name", E.string name )
+        ]
+
+
+postInputEncoder : String -> String -> E.Value
+postInputEncoder title body =
+    E.object
+        [ ( "title", E.string title )
+        , ( "body", E.string body )
         ]
 
 
