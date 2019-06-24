@@ -15,23 +15,23 @@ import Url
 
 
 base_url =
-    "http://localhost:4000/api"
+    "http://localhost:4000/api/"
 
 
 users_url =
-    base_url ++ "/users"
+    base_url ++ "users/"
 
 
 me_url =
-    users_url ++ "/me"
+    users_url ++ "me/"
 
 
 login_url =
-    users_url ++ "/login"
+    users_url ++ "login/"
 
 
 posts_url =
-    base_url ++ "/posts"
+    base_url ++ "posts/"
 
 
 
@@ -41,24 +41,30 @@ posts_url =
 type alias Model =
     { key : Nav.Key
     , url : Url.Url
+    , route : Routes.Route
     , email : String
     , password : String
     , name : String
     , user : User
     , posts : Posts
+    , post : Post
     , error : String
     , displayLogin : Bool
-    , route : Routes.Route
     , time : Time.Posix
     }
 
 
+emptyPost : Post
+emptyPost =
+    Post 0 "" "" newUser (Time.millisToPosix 0) ""
+
+
 init : flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Model key url "" "" "" newUser [] "" True (Routes.parse url) (Time.millisToPosix 0)
+    ( Model key url (Routes.parse url) "" "" "" newUser [] emptyPost "" True (Time.millisToPosix 0)
     , Cmd.batch
-        [ fetchPostsAndTime
-        , fetchSelf
+        [ fetchSelf
+        , fetchResource url
         ]
     )
 
@@ -80,6 +86,7 @@ type Msg
     | SetPassword String
     | GotInitialUser (Result Http.Error User)
     | GotUser (Result Http.Error User)
+    | GotPost (Result Http.Error Post)
     | GotPosts (Result Http.Error Posts)
       -- | Error Http.Error
     | LinkClicked Browser.UrlRequest
@@ -123,6 +130,14 @@ update msg model =
                 Err _ ->
                     ( model, Cmd.none )
 
+        GotPost result ->
+            case result of
+                Ok post ->
+                    ( { model | post = post, error = "" }, Cmd.none )
+
+                Err err ->
+                    ( { model | error = errorToString err }, Cmd.none )
+
         GotPosts result ->
             case result of
                 Ok posts ->
@@ -141,7 +156,7 @@ update msg model =
             ( { model | error = "" }, Cmd.none )
 
         UrlChanged url ->
-            ( { model | url = url }, Cmd.none )
+            ( { model | url = url, route = Routes.parse url }, fetchResource url )
 
         LinkClicked urlRequest ->
             case urlRequest of
@@ -150,6 +165,30 @@ update msg model =
 
                 Browser.External href ->
                     ( model, Nav.load href )
+
+
+fetchResource : Url.Url -> Cmd Msg
+fetchResource url =
+    case Routes.parse url of
+        Routes.Home ->
+            fetchPostsAndTime
+
+        Routes.Post id ->
+            fetchSinglePost id
+
+        Routes.PostSlug id _ ->
+            fetchSinglePost id
+
+        _ ->
+            Cmd.none
+
+
+fetchSinglePost : Int -> Cmd Msg
+fetchSinglePost id =
+    Http.get
+        { url = posts_url ++ String.fromInt id
+        , expect = Http.expectJson GotPost postDecoder
+        }
 
 
 signUp : Model -> Cmd Msg
@@ -217,7 +256,7 @@ view model =
         [ div [ class "main container" ]
             [ viewError model
             , div [ class "container" ]
-                [ viewPosts model
+                [ viewBody model
                 , div [ class "side-info container" ]
                     [ viewWelcome model
                     , viewAuth model
@@ -226,6 +265,27 @@ view model =
             ]
         ]
     }
+
+
+viewBody : Model -> Html Msg
+viewBody model =
+    case model.route of
+        Routes.Home ->
+            viewPosts model
+
+        Routes.PostSlug _ _ ->
+            viewSinglePost model
+
+        Routes.Post _ ->
+            viewSinglePost model
+
+        _ ->
+            view404 model
+
+
+view404 : model -> Html Msg
+view404 model =
+    div [] [ text "404" ]
 
 
 viewError : Model -> Html Msg
@@ -291,6 +351,18 @@ viewWelcome model =
             h1 [] [ text ("Welcome, " ++ model.user.name) ]
 
 
+viewSinglePost : Model -> Html Msg
+viewSinglePost model =
+    div [ class "posts container" ]
+        [ div []
+            [ a [ href "/" ] [ text "Go Back" ] ]
+        , viewPost
+            model.time
+            model.post
+        , div [ class "post body" ] [ text model.post.body ]
+        ]
+
+
 viewPosts : Model -> Html Msg
 viewPosts model =
     div [ class "posts container" ] (List.map (viewPost model.time) model.posts)
@@ -299,8 +371,11 @@ viewPosts model =
 viewPost : Time.Posix -> Post -> Html Msg
 viewPost cur_time post =
     let
+        slug =
+            slugify post.title
+
         post_url =
-            "/p/" ++ String.fromInt post.id
+            "/p/" ++ String.fromInt post.id ++ "/" ++ slug
 
         user_url =
             "/u/" ++ post.author.name
@@ -318,9 +393,19 @@ viewPost cur_time post =
             , div [ class "post timestamp" ]
                 [ span [ title post.created_at_iso ] [ text (" - " ++ elapsed_time) ] ]
             ]
-
-        -- , div [ class "post body" ] [ text post.body ]
         ]
+
+
+slugify : String -> String
+slugify pre =
+    let
+        lower =
+            String.toLower pre
+
+        under =
+            String.replace " " "_" lower
+    in
+    under
 
 
 
